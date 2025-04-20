@@ -1,8 +1,9 @@
 //require('dotenv').config();//
 import dotenv from "dotenv";
 import connectDB from "./db/dbindex.js";
+import {app} from "./app.js";
 dotenv.config({
-  path: "../.env",
+  path: "./.env",
 });
 
 /** first approach of connecting to mongodb
