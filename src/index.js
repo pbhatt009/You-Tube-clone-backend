@@ -36,16 +36,16 @@ catch (error) {
   }
 })();*/
 connectDB()
-.then(()=>{
-    app.on('error', (error) => {
-        console.error('express  error:', error);
-        throw error;
+  .then(() => {
+    app.on("error", (error) => {
+      console.error("express  error:", error);
+      throw error;
     });
-    app.listen(process.env.PORT||8000, () => {
-        console.log(`Server is running on port ${process.env.PORT||8000}`);
-    }); 
-})
-.catch((error) => {
-  console.error("Error connecting to MongoDB:", error);
-  process.exit(1); // Exit the process with failure
-});
+    app.listen(process.env.PORT || 8000, () => {
+      console.log(`Server is running on port ${process.env.PORT || 8000}`);
+    });
+  })
+  .catch((error) => {
+    console.error("Error connecting to MongoDB:", error);
+    process.exit(1); // Exit the process with failure
+  });
