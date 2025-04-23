@@ -22,6 +22,7 @@ const uploadonCloudinary = async (filePath) => {
   } catch {
     (err) => {
       console.log("error in uploading file", err);
+      // if file is not uploaded then delete the file from local
       fs.unlinkSync(filePath);
     };
   }
