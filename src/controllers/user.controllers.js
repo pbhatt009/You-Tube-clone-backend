@@ -5,9 +5,28 @@ import { User } from "../models/user.model.js";
 
 import fs from "fs";
 
-import { uploadonCloudinary } from "../utils/cloudinary.js";
+import { uploadonCloudinary } from  "../utils/cloudinary.js"
+////function for generating tokens
+const generatetokens= async(userId)=>{
+  try {
+    const user = await User.findById(userId)
+      const accessToken = user.generateAccessToken()
+     const refreshToken = user.generateRefreshToken()
+   
+    user.refreshToken = refreshToken
+    await user.save({ validateBeforeSave: false })
 
-export const registerUser = asyncHandler(async (req, res) => {
+    return {accessToken, refreshToken}
+
+
+} catch (error) {
+    throw new ApiError(500, "Something went wrong while generating referesh and access token")
+}
+}
+
+
+
+ const registerUser = asyncHandler(async (req, res) => {
   /////check the files are uploaded in local temp folder
   ///get user data from request body
   //validate data
@@ -24,7 +43,7 @@ export const registerUser = asyncHandler(async (req, res) => {
     Array.isArray(req.files.coverImage) &&
     req.files.coverImage.length > 0
   ) {
-    coverImagelocalpath = req.files.coverImage[0];
+    coverImagelocalpath = await req.files.coverImage[0].path;
   }
 
   let avatarlocalpath = null;
@@ -33,15 +52,15 @@ export const registerUser = asyncHandler(async (req, res) => {
     Array.isArray(req.files.avatar) &&
     req.files.avatar.length > 0
   ) {
-    avatarlocalpath = req.files.avatar[0];
+    avatarlocalpath =await  req.files.avatar[0].path;
   } else {
     remove();
     throw new ApiError(400, "avatar is required");
   }
 
   function remove() {
-    if (avatarlocalpath) fs.unlinkSync(avatarlocalpath.path);
-    if (coverImagelocalpath) fs.unlinkSync(coverImagelocalpath.path);
+    if (avatarlocalpath) fs.unlinkSync(avatarlocalpath);
+    if (coverImagelocalpath) fs.unlinkSync(coverImagelocalpath);
   }
   //   console.log("req.body", req.body);
   const { fullName, email, username, password } = req.body;
@@ -81,14 +100,17 @@ export const registerUser = asyncHandler(async (req, res) => {
   ///check for image,check for avatar and upload image to cloudinary
   /////avatra is required to upload
   //   console.log("req.files", req.files);
+  console.log("avatarlocalpath", avatarlocalpath);
+  console.log("coverImagelocalpath", coverImagelocalpath);
 
   let avatar = await uploadonCloudinary(avatarlocalpath);
   let coverImage = await uploadonCloudinary(coverImagelocalpath);
   /////crreate user
+  console.log("avatar", avatar);
   const user = await User.create({
     fullName,
     avatar: avatar.url,
-    coverImage: coverImage?.url || "",
+    coverImage: (coverImage)? coverImage.url : null,
     email,
     password,
     username: username.toLowerCase(),
@@ -111,3 +133,94 @@ export const registerUser = asyncHandler(async (req, res) => {
     .status(201)
     .json(new ApiResponse(201, CreatedUser, "User created successfully"));
 });
+
+ const loginUser = asyncHandler(async (req, res) => {
+/////login user
+////check for email/usrname  and password format 
+////match the  email and password with db
+//if user is not found
+//if password is not matched
+///create access token and refresh token
+ console.log("req.body", req.body);
+const {email,username,password}=req.body;
+if(!username &&!email){
+  throw new ApiError(400,"username or email is required")
+
+}
+let user=await User.findOne({
+    $or:[{username},{email}]
+
+})
+if(!user){
+  throw new ApiError(401,"user not found")
+}
+///check for password
+///use user not User
+const ispasvalid=await user.ispasswordMatch(password)
+console.log("ispasvalid",ispasvalid);
+if(!ispasvalid){
+  throw new ApiError(401,"password is incorrect")
+}
+
+///////create access token and refresh token
+const {accessToken,refreshToken}=await generatetokens(user._id)
+///our user of this scope does not know about refreshToken
+
+user.refreshToken=refreshToken;
+await user.save({validateBeforeSave:false})
+///remove password and refresh token from user object
+user=await User.findById(user._id).select("-password -refreshToken")
+
+const options={
+    ///makes cookie http only and secure can only be accessed snd modified by server
+    ///http only means cookie is not accessible by javascript
+    ///secure means cookie is only sent over https
+    httpOnly:true,
+     secure:true,
+}
+
+return res
+.status(200)
+.cookie("accessToken",accessToken,options)
+.cookie("refreshToken",refreshToken,options)
+.json(new ApiResponse(200,{user,accessToken,refreshToken},"user logged in successfully"))
+
+})
+ const logoutUser = asyncHandler(async (req, res) => {
+///clear the cookies
+///remove refresh token from db
+//======================
+////first method
+// const user=await User.findById(req.user._id)
+// if(!user){
+//   throw new ApiError(401,"user not found")}
+//   user.refreshToken=undefined;
+//   user.save({validateBeforeSave:false})
+  //=============================
+  User.findByIdAndUpdate(req.user._id,
+    {
+    $set:{
+refreshToken:undefined
+    }
+  },{
+  new:true,//// if we  do not use this option it will return the old user object
+  }
+)
+const options={
+    ///makes cookie http only and secure can only be accessed snd modified by server
+    ///http only means cookie is not accessible by javascript
+    ///secure means cookie is only sent over https
+    httpOnly:true,
+    secure:true,
+}
+return res.status(200)
+.clearCookie("accessToken",options)
+.clearCookie("refreshToken",options)
+.json(new ApiResponse(200,{},"user logged out successfully"))
+})
+
+export {
+  registerUser,
+  loginUser,
+  logoutUser
+}

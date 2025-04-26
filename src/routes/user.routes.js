@@ -1,6 +1,7 @@
 import { Router } from "express";
-import { registerUser } from "../controllers/user.controllers.js";
+import { registerUser,loginUser,logoutUser } from "../controllers/user.controllers.js";
 import { upload } from "../middlewares/multer.js";
+import { verifyToken } from "../middlewares/auth.middleware.js";
 const router = Router();
 
 router.route("/register").post(
@@ -11,9 +12,21 @@ router.route("/register").post(
   ]),
   registerUser
 );
+
 // Express internally kuch aise karta hai:
 /*app.on('POST /register', (req, res, next) => {
     registerUser(req, res, next);
  });*/
+
+ router.route("/login").post(
+   
+  loginUser
+)
+///secured route routes after login
+router.route("/logout").post(
+    verifyToken,
+    logoutUser
+)
+
 
 export default router;
