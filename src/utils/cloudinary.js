@@ -1,7 +1,7 @@
 import { v2 as cloudinary } from "cloudinary";
 import fs from "fs";
 import dotenv from "dotenv";
-import { extractPublicId } from 'cloudinary-build-url'
+import { extractPublicId } from "cloudinary-build-url";
 import { ApiError } from "./apieror.js";
 dotenv.config({
   path: "./.env",
@@ -24,28 +24,25 @@ const uploadonCloudinary = async (filePath) => {
     console.log("file is uploaded successfully", res);
     fs.unlinkSync(filePath);
     return res;
-  } catch (err)  {
-      console.log("error in uploading file", err);
-      // if file is not uploaded then delete the file from local
-      fs.unlinkSync(filePath);
-    };
-  
+  } catch (err) {
+    console.log("error in uploading file", err);
+    // if file is not uploaded then delete the file from local
+    fs.unlinkSync(filePath);
+  }
 };
-
 
 const deleteFile = async (filePath) => {
   console.log("filePath", filePath);
-try{
-  const publicId = extractPublicId(filePath);
-  console.log("publicId", publicId);
-  if (!publicId) {
-   throw new ApiError(400, "Invalid file path");
+  try {
+    const publicId = extractPublicId(filePath);
+    console.log("publicId", publicId);
+    if (!publicId) {
+      throw new ApiError(400, "Invalid file path");
+    }
+    const result = await cloudinary.uploader.destroy(publicId);
+    console.log("result", result);
+  } catch (err) {
+    throw new ApiError(500, "error in deleting file", err);
   }
-const result =await cloudinary.uploader.destroy(publicId);
-console.log("result", result);
-}
-catch (err) {
- throw new ApiError(500, "error in deleting file", err);
-  }
-}
-export { uploadonCloudinary,deleteFile };
+};
+export { uploadonCloudinary, deleteFile };

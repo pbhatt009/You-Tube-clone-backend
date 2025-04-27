@@ -1,5 +1,15 @@
 import { Router } from "express";
-import { registerUser,loginUser,logoutUser,  refreshTokenUpdate,changePassword,getcurrentUser,updateUser,updateAvatar,updateCoverImage} from "../controllers/user.controllers.js";
+import {
+  registerUser,
+  loginUser,
+  logoutUser,
+  refreshTokenUpdate,
+  changePassword,
+  getcurrentUser,
+  updateUser,
+  updateAvatar,
+  updateCoverImage,
+} from "../controllers/user.controllers.js";
 import { upload } from "../middlewares/multer.js";
 import { verifyToken } from "../middlewares/auth.middleware.js";
 const router = Router();
@@ -18,43 +28,19 @@ router.route("/register").post(
     registerUser(req, res, next);
  });*/
 
- router.route("/login").post(
-   
-  loginUser
-)
+router.route("/login").post(loginUser);
 ///secured route routes after login
-router.route("/logout").post(
-    verifyToken,
-    logoutUser
-)
-router.route("/refresh-token").post(
-  refreshTokenUpdate
-);
-router.route("/change-password").post(
-  
-  verifyToken,
-  changePassword
-
-
-);
-router.route("/current-user").get(
-  verifyToken,
-  getcurrentUser
-);
+router.route("/logout").post(verifyToken, logoutUser);
+router.route("/refresh-token").post(refreshTokenUpdate);
+router.route("/change-password").post(verifyToken, changePassword);
+router.route("/current-user").get(verifyToken, getcurrentUser);
 ////updates only info of user not  avatar or cover image
-router.route("/update-user").put(
-  verifyToken,
-updateUser
-);
-router.route("/update-avatar").put(
-  verifyToken,
-  upload.single("avatar"),
-  updateAvatar
-);
-router.route("/update-cover").put(
-  verifyToken,
-  upload.single("coverImage"),
-  updateCoverImage
-);
+router.route("/update-user").put(verifyToken, updateUser);
+router
+  .route("/update-avatar")
+  .put(verifyToken, upload.single("avatar"), updateAvatar);
+router
+  .route("/update-cover")
+  .put(verifyToken, upload.single("coverImage"), updateCoverImage);
 
 export default router;
