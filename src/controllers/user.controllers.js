@@ -5,7 +5,11 @@ import { User } from "../models/user.model.js";
 import jwt from "jsonwebtoken";
 import fs from "fs";
 
-import { uploadonCloudinary } from  "../utils/cloudinary.js"
+import { uploadonCloudinary,deleteFile} from  "../utils/cloudinary.js"
+function isValidEmail(email) {
+  const emailRegex = /^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$/;
+  return emailRegex.test(email);
+}
 ////function for generating tokens
 const generatetokens= async(userId)=>{
   try {
@@ -71,12 +75,6 @@ const registerUser = asyncHandler(async (req, res) => {
     throw new ApiError(400, "all fields are required");
   }
   ///check for email validation
-
-  function isValidEmail(mail) {
-    // Regular Expression (Regex) for basic email checking
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return emailRegex.test(mail.trim());
-  }
 
   if (!isValidEmail(email)) {
     remove();
@@ -305,7 +303,83 @@ const refreshTokenUpdate=asyncHandler(async(req,res,next)=>{
   
  })
 
+const getcurrentUser=asyncHandler(async(req,res)=>{
+  const user=await User.findById(req.user._id).select("-password -refreshToken")
+  if(!user){
+    throw new ApiError(401,"user not found")
+  }
+  return res.status(200).json(new ApiResponse(200,user,"user fetched successfully"))
+})
+const updateUser=asyncHandler(async(req,res)=>{
 
+  const {username,fullName,email}=req.body;
+  if(!fullName.trim() || !username.trim() || !email.trim()){
+    throw new ApiError(400,"all fields are required")
+  }
+
+  if(!isValidEmail(email)){
+    throw new ApiError(400,"email is not valid")
+  }
+  const user=await User.findById(req.user?._id).select("-password -refreshToken");
+  if(!user){
+    throw new ApiError(401,"user not found")
+  }
+  if(user.username!==username) user.username=username;
+  if(user.email!==email) user.email=email;
+  if(user.fullName!==fullName) user.fullName=fullName;
+  await user.save({validateBeforeSave:false})
+   res.status(200).json(new ApiResponse(200,user,"user updated successfully"))
+})
+
+const updateAvatar=asyncHandler(async(req,res)=>{
+const avatar=req.file;
+if(!avatar){
+  throw new ApiError(400,"avatar is required")
+
+}
+const avatarlocalpath = avatar.path;
+
+const user=await User.findById(req.user?._id).select("-password -refreshToken");
+if(!user){
+  throw new ApiError(401,"user not found")
+}
+////delete the old avatar from cloudinary
+if(user?.avatar)await deleteFile(user?.avatar);
+const newavatar=await uploadonCloudinary(avatarlocalpath);
+if(!newavatar){
+  throw new ApiError(500,"error in uploading avatar")}
+user.avatar=newavatar.url;
+await user.save({validateBeforeSave:false})
+res.status(200).json(new ApiResponse(200,user,"avatar updated successfully"))
+
+})
+
+const updateCoverImage=asyncHandler(async(req,res)=>{
+  const coverImage=req.file;
+  if(!coverImage){
+    throw new ApiError(400,"No cover image is chosen")
+  }
+  const coverImagelocalpath = coverImage.path;
+  
+  const user=await User.findById(req.user?._id).select("-password -refreshToken");
+  if(!user){
+    throw new ApiError(401,"user not found")
+  }
+  ////delete the old cover image from cloudinary if it exists
+  if(user?.coverImage) await deleteFile(user?.coverImage);
+    ////upload the new cover image to cloudinary
+    const newcoverImage=await uploadonCloudinary(coverImagelocalpath);
+    if(!newcoverImage){
+      throw new ApiError(500,"error in uploading cover image")}
+  ///update the cover image in user object
+    user.coverImage=newcoverImage.url;
+  
+
+   await user.save({validateBeforeSave:false})
+  res.status(200).json(new ApiResponse(200,user,"cover image updated suceesfully"))
+  
+  })
+  
 
 
 
@@ -315,4 +389,8 @@ export {
   logoutUser,
   refreshTokenUpdate,
   changePassword,
+  getcurrentUser,
+  updateUser,
+  updateAvatar,
+  updateCoverImage
 } 

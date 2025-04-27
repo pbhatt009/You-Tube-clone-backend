@@ -1,6 +1,8 @@
 import { v2 as cloudinary } from "cloudinary";
 import fs from "fs";
 import dotenv from "dotenv";
+import { extractPublicId } from 'cloudinary-build-url'
+import { ApiError } from "./apieror.js";
 dotenv.config({
   path: "./.env",
 });
@@ -29,4 +31,21 @@ const uploadonCloudinary = async (filePath) => {
     };
   
 };
-export { uploadonCloudinary };
+
+
+const deleteFile = async (filePath) => {
+  console.log("filePath", filePath);
+try{
+  const publicId = extractPublicId(filePath);
+  console.log("publicId", publicId);
+  if (!publicId) {
+   throw new ApiError(400, "Invalid file path");
+  }
+const result =await cloudinary.uploader.destroy(publicId);
+console.log("result", result);
+}
+catch (err) {
+ throw new ApiError(500, "error in deleting file", err);
+  }
+}
+export { uploadonCloudinary,deleteFile };
