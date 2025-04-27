@@ -237,17 +237,20 @@ const refreshTokenUpdate=asyncHandler(async(req,res,next)=>{
         if(!decodedToken){
           throw new ApiError(401,"unauthorized access")
         }
-    
-        const user=await User.findById(decodedToken?._id).select("-password -refreshToken");
+        //  console.log("decodedToken", decodedToken);
+        const user=await User.findById(decodedToken?._id).select("-password ");
         if(!user){
           throw new ApiError(401,"Invalid refresh token")
         }
+        // console.log("user", user);
+        // console.log("IncomingrefreshToken", IncomingrefreshToken);
         if(user?.refreshToken!==IncomingrefreshToken){
           throw new ApiError(401,"Refreh token is not valid")
         }
         ///generate new access token and refresh token
-        const {newAccessToken,newRefreshToken}=await generatetokens(user._id)
-        user.refreshToken=newRefreshToken;
+        const {accessToken, refreshToken}=await generatetokens(user._id)
+        user.refreshToken=refreshToken;
+     
         await user.save({validateBeforeSave:false})
         const options={
           ///makes cookie http only and secure can only be accessed snd modified by server
@@ -257,9 +260,9 @@ const refreshTokenUpdate=asyncHandler(async(req,res,next)=>{
           secure:true,
       }
         res.status(200)
-        .cookie("accessToken",newAccessToken,options)
-        .cookie("refreshToken",newRefreshToken,options)
-        .json(new ApiResponse(200,{user,accessToken:newAccessToken,refreshToken:newRefreshToken},"Access token and refresh token updated successfully"))
+        .cookie("accessToken",accessToken,options)
+        .cookie("refreshToken",refreshToken,options)
+        .json(new ApiResponse(200,{user,accessToken,refreshToken},"Access token and refresh token updated successfully"))
         
       } catch (error) {
         throw new ApiError(401,error?.message||"unauthorized access")
