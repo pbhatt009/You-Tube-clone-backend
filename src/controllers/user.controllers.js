@@ -23,10 +23,7 @@ const generatetokens= async(userId)=>{
     throw new ApiError(500, "Something went wrong while generating referesh and access token")
 }
 }
-
-
-
- const registerUser = asyncHandler(async (req, res) => {
+const registerUser = asyncHandler(async (req, res) => {
   /////check the files are uploaded in local temp folder
   ///get user data from request body
   //validate data
@@ -197,7 +194,7 @@ return res
 //   user.refreshToken=undefined;
 //   user.save({validateBeforeSave:false})
   //=============================
-  User.findByIdAndUpdate(req.user._id,
+  User.findByIdAndUpdate(req.user?._id,
     {
     $set:{
 refreshToken:undefined
@@ -270,9 +267,52 @@ const refreshTokenUpdate=asyncHandler(async(req,res,next)=>{
       }
 
 })
+ const changePassword=asyncHandler(async(req,res)=>{
+   /// get user from req.user
+    ///get old password and new password from req.body
+    ///check if old password is correct
+    ///check if new password is same as old password
+    ///update the password
+    ///remove password and refresh token from user object
+    ///return response
+    console.log("req.body", req.body);
+    console.log("req.user", req.user._id);
+  
+    const user=await User.findById(req.user._id);/////req.user will be available from auth middleware
+    if(!user){
+      throw new ApiError(401,"user not found")
+    }
+   
+    try{
+    const {oldPassword,newPassword}=req.body;
+    if(oldPassword===newPassword){
+      throw new ApiError(401,"new password should not be same as old password")
+    }
+    if(!await user.ispasswordMatch(oldPassword)){
+      throw new ApiError(401,"old password is incorrect")
+    }
+ 
+    user.password=newPassword;
+    await user.save({validateBeforeSave:false})
+     user.password=undefined;
+     res.status(200).json(new ApiResponse(200,user,"password updated successfully"))
+
+  
+  }
+  catch (error) {
+    throw new ApiError(500, error.message || "Something went wrong");
+  }
+  
+ })
+
+
+
+
+
 export {
   registerUser,
   loginUser,
   logoutUser,
-  refreshTokenUpdate
+  refreshTokenUpdate,
+  changePassword,
 } 
