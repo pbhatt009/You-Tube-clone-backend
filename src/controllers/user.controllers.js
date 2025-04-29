@@ -3,7 +3,8 @@ import { ApiError } from "../utils/apieror.js";
 import { ApiResponse } from "../utils/apiResponse.js";
 import { User } from "../models/user.model.js";
 import jwt from "jsonwebtoken";
-import fs from "fs";
+import fs, { appendFile } from "fs";
+import mongoose from "mongoose";
 
 import { uploadonCloudinary, deleteFile } from "../utils/cloudinary.js";
 function isValidEmail(email) {
@@ -267,7 +268,7 @@ const refreshTokenUpdate = asyncHandler(async (req, res, next) => {
       httpOnly: true,
       secure: true,
     };
-    res
+    return res
       .status(200)
       .cookie("accessToken", accessToken, options)
       .cookie("refreshToken", refreshToken, options)
@@ -313,7 +314,7 @@ const changePassword = asyncHandler(async (req, res) => {
     user.password = newPassword;
     await user.save({ validateBeforeSave: false });
     user.password = undefined;
-    res
+    return res
       .status(200)
       .json(new ApiResponse(200, user, "password updated successfully"));
   } catch (error) {
@@ -375,7 +376,7 @@ const updateAvatar = asyncHandler(async (req, res) => {
   }
   user.avatar = newavatar.url;
   await user.save({ validateBeforeSave: false });
-  res
+  return res
     .status(200)
     .json(new ApiResponse(200, user, "avatar updated successfully"));
 });
@@ -404,10 +405,131 @@ const updateCoverImage = asyncHandler(async (req, res) => {
   user.coverImage = newcoverImage.url;
 
   await user.save({ validateBeforeSave: false });
-  res
+  return res
     .status(200)
     .json(new ApiResponse(200, user, "cover image updated suceesfully"));
 });
+
+const getuserchanel=asyncHandler(async(req,res)=>{
+const {username}=req.params;
+if(!username?.trim()){
+throw new ApiError(400,"username is required")
+}
+const channel=await User.aggregate([
+  {
+   $match:{
+    username:username?.toLowerCase()
+   }
+
+  },
+  {
+    
+$lookup:{
+  from:"subscriptions",
+  localField:"_id",
+  foreignField:"channel",
+  as:"subscribers"
+}
+  },
+  {
+$lookup:{
+  from:"subscriptions",
+  localField:"_id",
+  foreignField:"subscriber",
+  as:"subscribedTo"
+}
+
+  },
+
+  {
+    $addFields:{
+      subscriberCount:{
+        $size:"$subscribers"
+      },
+      channelsSubscribedToCount:{
+        $size:"$subscribedTo"
+      },
+      issubscribed:{
+        $cond:{
+          if:{$in:[req.user?._id,"$subscribers.subscriber"]},
+          then:true,
+          else :false
+        }
+      }
+    }
+  },
+  {
+    $project:{
+
+      fullName:1,
+      username:1,
+      avatar:1,
+      coverImage:1,
+      subscriberCount:1,
+      channelsSubscribedToCount:1,
+      issubscribed:1,
+      
+    }
+  }
+
+
+])
+if(!channel?.length){
+  throw new ApiError(404,"channel not found")
+}
+ return res.status(200).json(new ApiResponse(200,channel[0],"channel fetched successfully"))
+})
+
+const getwatchHistory=asyncHandler(async(req,res)=>{
+   const user=req.user;
+   if(!user) throw new ApiError(401,"user not found");
+   const watchdetails= User.aggregate([
+        {
+          $match:{
+            _id: new mongoose.Types.ObjectId(user._id)
+
+          }
+        },
+       {
+        $lookup:{
+          from:"videos",
+          localField:"watchHistory",
+          foreignField:"_id",
+          as:"watchHistoryinfo",
+          pipeline:[
+            {
+            $lookup:{
+              from:"users",
+              localField:"owner",
+              foreignField:"_id",
+              as:"ownerinfo",
+              pipeline:[
+                {$project:{
+                  username:1,
+                  fullName:1,
+                  avatar:1,
+                }
+              }
+              ]
+            }
+            },
+            {
+             $addFields:{
+              ownerinfo:{
+               $first:"$ownerinfo"
+              }
+             }
+            }
+          ]
+        }
+       }
+
+
+   ])
+
+ return  res.status(200).json(new ApiResponse(200,watchdetails[0].watchHistoryinfo,"watch history fetched succesfully"))
+})
+
 
 export {
   registerUser,
@@ -419,4 +541,6 @@ export {
   updateUser,
   updateAvatar,
   updateCoverImage,
+  getuserchanel,
+  getwatchHistory
 };
