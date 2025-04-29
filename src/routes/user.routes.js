@@ -9,6 +9,8 @@ import {
   updateUser,
   updateAvatar,
   updateCoverImage,
+  getuserchannel,
+  getwatchHistory
 } from "../controllers/user.controllers.js";
 import { upload } from "../middlewares/multer.js";
 import { verifyToken } from "../middlewares/auth.middleware.js";
@@ -35,12 +37,23 @@ router.route("/refresh-token").post(refreshTokenUpdate);
 router.route("/change-password").post(verifyToken, changePassword);
 router.route("/current-user").get(verifyToken, getcurrentUser);
 ////updates only info of user not  avatar or cover image
-router.route("/update-user").put(verifyToken, updateUser);
+router.route("/update-user").patch(verifyToken, updateUser);
 router
   .route("/update-avatar")
-  .put(verifyToken, upload.single("avatar"), updateAvatar);
+  .patch(verifyToken, upload.single("avatar"), updateAvatar);
 router
   .route("/update-cover")
-  .put(verifyToken, upload.single("coverImage"), updateCoverImage);
+  .patch(verifyToken, upload.single("coverImage"), updateCoverImage);
+
+  router.route("/channel/:username").get(
+    verifyToken,
+    getuserchannel
+  )
+
+  router.route("/WatchHistory")
+  .get(
+    verifyToken,
+    getwatchHistory
+  )
 
 export default router;
