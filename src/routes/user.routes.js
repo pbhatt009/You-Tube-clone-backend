@@ -10,10 +10,15 @@ import {
   updateAvatar,
   updateCoverImage,
   getuserchannel,
-  getwatchHistory
+  getwatchHistory,
+  updatewatchhistory
 } from "../controllers/user.controllers.js";
+
+import { uploadvideo } from "../controllers/videos.controller.js";
+import { subscription,unsubscription } from "../controllers/subscripition.controller.js";
 import { upload } from "../middlewares/multer.js";
 import { verifyToken } from "../middlewares/auth.middleware.js";
+
 const router = Router();
 
 router.route("/register").post(
@@ -50,10 +55,30 @@ router
     getuserchannel
   )
 
-  router.route("/WatchHistory")
+  router.route("/watchHistory")
   .get(
     verifyToken,
     getwatchHistory
   )
+  router.route("/channel/:channelname/subscribe").post(
+    verifyToken,
+    subscription
+  )
 
+  router.route("/channel/:channelname/unsubscribe").post(
+    verifyToken,
+   unsubscription
+  )
+router.route("/uploadVideo").post(
+verifyToken,
+upload.fields([
+  {name:"videoFile",maxCount:1},
+  {name:"thumbnail",maxCount:1}
+]),
+verifyToken,
+uploadvideo
+)
+
+  router.route("/UpdateWatchHistory/:videoid")
+.patch(verifyToken,updatewatchhistory);
 export default router;

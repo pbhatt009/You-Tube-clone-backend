@@ -411,74 +411,90 @@ const updateCoverImage = asyncHandler(async (req, res) => {
 });
 
 const getuserchannel=asyncHandler(async(req,res)=>{
-const {username}=req.params;
-if(!username?.trim()){
-throw new ApiError(400,"username is required")
-}
-const channel=await User.aggregate([
+  const {username}=req.params;
+  if(!username?.trim()){
+  throw new ApiError(400,"username is required")
+  }
+  const channel=await User.aggregate([
+    {
+     $match:{
+      username:username?.toLowerCase()
+     }
+  
+    },
+    {
+      
+  $lookup:{
+    from:"subscriptions",
+    localField:"_id",
+    foreignField:"channel",
+    as:"subscribers"
+  }
+    },
+    {
+  $lookup:{
+    from:"subscriptions",
+    localField:"_id",
+    foreignField:"subscriber",
+    as:"subscribedTo"
+  }
+  
+    },
   {
-   $match:{
-    username:username?.toLowerCase()
-   }
-
+  $lookup:{
+    from:"videos",
+    localField:"_id",
+    foreignField:"owner",
+    as:"Channelvideos",
+    pipeline:[
+    {
+      $project:{
+        owner:0,
+      }
+    }]
+  }
+  
   },
-  {
-    
-$lookup:{
-  from:"subscriptions",
-  localField:"_id",
-  foreignField:"channel",
-  as:"subscribers"
-}
-  },
-  {
-$lookup:{
-  from:"subscriptions",
-  localField:"_id",
-  foreignField:"subscriber",
-  as:"subscribedTo"
-}
-
-  },
-
-  {
-    $addFields:{
-      subscriberCount:{
-        $size:"$subscribers"
-      },
-      channelsSubscribedToCount:{
-        $size:"$subscribedTo"
-      },
-      issubscribed:{
-        $cond:{
-          if:{$in:[req.user?._id,"$subscribers.subscriber"]},
-          then:true,
-          else :false
+  
+    {
+      $addFields:{
+        subscriberCount:{
+          $size:"$subscribers"
+        },
+        channelsSubscribedToCount:{
+          $size:"$subscribedTo"
+        },
+        issubscribed:{
+          $cond:{
+            if:{$in:[req.user?._id,"$subscribers.subscriber"]},
+            then:true,
+            else :false
+          }
         }
       }
+    },
+    {
+      $project:{
+  
+        fullName:1,
+        username:1,
+        avatar:1,
+        coverImage:1,
+        subscriberCount:1,
+        channelsSubscribedToCount:1,
+        issubscribed:1,
+         Channelvideos:1
+        
+      }
     }
-  },
-  {
-    $project:{
-
-      fullName:1,
-      username:1,
-      avatar:1,
-      coverImage:1,
-      subscriberCount:1,
-      channelsSubscribedToCount:1,
-      issubscribed:1,
-      
-    }
+  
+  
+  ])
+  if(!channel?.length){
+    throw new ApiError(404,"channel not found")
   }
-
-
-])
-if(!channel?.length){
-  throw new ApiError(404,"channel not found")
-}
- return res.status(200).json(new ApiResponse(200,channel[0],"channel fetched successfully"))
-})
+   return res.status(200).json(new ApiResponse(200,channel[0],"channel fetched successfully"))
+  })
 
 const getwatchHistory=asyncHandler(async(req,res)=>{
    const user=req.user;
@@ -527,9 +543,28 @@ const getwatchHistory=asyncHandler(async(req,res)=>{
 
    ])
 
- return  res.status(200).json(new ApiResponse(200,watchdetails[0].watchHistoryinfo,"watch history fetched succesfully"))
+ return  res.status(200).json(new ApiResponse(200,(watchdetails[0])?watchdetails[0].watchHistoryinfo:null,"watch history fetched succesfully"))
 })
+ 
+const updatewatchhistory=asyncHandler(async(req,res)=>{
+const userid=req.user?._id;
+if(!userid) throw new ApiError(401,"user not found")
+const {videoid}=req.params
+if(!videoid) throw new ApiError(401,"Video not found")
+  const user=await User.findByIdAndUpdate(userid,{
+$push:{
+  watchHistory:{
+    $each:[videoid],
+    $position:0,
+    $slice:100  /////prev 100 video which have watched
+  }
+}
+})
+if(!user) throw new ApiError(400,"eror in updating watch history");
+return res.status(200).json(new ApiResponse(200,{},"watch history updated succefully"));
 
+
+})
 
 export {
   registerUser,
@@ -542,5 +577,6 @@ export {
   updateAvatar,
   updateCoverImage,
   getuserchannel,
-  getwatchHistory
+  getwatchHistory,
+  updatewatchhistory
 };
