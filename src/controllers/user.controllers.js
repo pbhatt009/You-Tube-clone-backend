@@ -5,6 +5,7 @@ import { User } from "../models/user.model.js";
 import jwt from "jsonwebtoken";
 import fs, { appendFile } from "fs";
 import mongoose from "mongoose";
+import { ObjectId } from "mongodb";
 
 import { uploadonCloudinary, deleteFile } from "../utils/cloudinary.js";
 function isValidEmail(email) {
@@ -498,11 +499,12 @@ const getuserchannel=asyncHandler(async(req,res)=>{
 
 const getwatchHistory=asyncHandler(async(req,res)=>{
    const user=req.user;
+   console.log(user?._id)
    if(!user) throw new ApiError(401,"user not found");
-   const watchdetails= User.aggregate([
+   const watchdetails= await User.aggregate([
         {
           $match:{
-            _id: new mongoose.Types.ObjectId(user._id)
+            _id: new mongoose.Types.ObjectId(req.user._id)
 
           }
         },
@@ -543,7 +545,7 @@ const getwatchHistory=asyncHandler(async(req,res)=>{
 
    ])
 
- return  res.status(200).json(new ApiResponse(200,(watchdetails[0])?watchdetails[0].watchHistoryinfo:null,"watch history fetched succesfully"))
+ return  res.status(200).json(new ApiResponse(200,watchdetails[0].watchHistoryinfo,"watch history fetched succesfully"))
 })
  
 const updatewatchhistory=asyncHandler(async(req,res)=>{

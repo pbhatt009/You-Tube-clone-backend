@@ -28,8 +28,10 @@ app.use(cookieParser());
 
 //////routes
 import userRouter from "./routes/user.routes.js";
+import videorouter from "./routes/video.router.js"
+import subscripitionRouter from "./routes/subscripition.routers.js"
 ///route decleartion
-app.get("/", (req, res) => {
-  res.send("Welcome to YouTube clone");
-});
+
 app.use("/api/v1/user", userRouter);
+app.use("/api/v1/video",videorouter);
+app.use("/api/v1/subscription",subscripitionRouter)

@@ -3,7 +3,7 @@ import { Subscription } from "../models/subscription.model.js";
 import { User } from "../models/user.model.js";
 import { ApiError } from "../utils/apieror.js";
 import { ApiResponse } from "../utils/apiResponse.js";
-import mongoose from "mongoose";
+
 const subscription=asyncHandler( async(req,res)=>{
 const subscriber=req.user
 // console.log(subscriber?._id)
