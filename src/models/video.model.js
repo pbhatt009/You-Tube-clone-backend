@@ -8,7 +8,6 @@ const videoSchema = new Schema(
     },
     thumbnail: {
       type: String, //cloudenery url
-    
     },
     owner: {
       type: Schema.Types.ObjectId,
@@ -26,7 +25,7 @@ const videoSchema = new Schema(
       trim: true,
     },
     duration: {
-      type: Number, 
+      type: Number,
     },
     views: {
       type: Number,
@@ -34,7 +33,7 @@ const videoSchema = new Schema(
     },
     isPublic: {
       type: Boolean,
-    
+
       default: true,
     },
   },

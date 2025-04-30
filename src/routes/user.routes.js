@@ -11,10 +11,8 @@ import {
   updateCoverImage,
   getuserchannel,
   getwatchHistory,
-  updatewatchhistory
+  updatewatchhistory,
 } from "../controllers/user.controllers.js";
-
-
 
 import { upload } from "../middlewares/multer.js";
 import { verifyToken } from "../middlewares/auth.middleware.js";
@@ -30,7 +28,7 @@ router.route("/register").post(
   registerUser
 );
 
-// Express internally kuch aise karta hai:
+//internally working
 /*app.on('POST /register', (req, res, next) => {
     registerUser(req, res, next);
  });*/
@@ -50,18 +48,11 @@ router
   .route("/update-cover")
   .patch(verifyToken, upload.single("coverImage"), updateCoverImage);
 
-  router.route("/channel/:username").get(
-    verifyToken,
-    getuserchannel
-  )
+router.route("/channel/:username").get(verifyToken, getuserchannel);
 
-  router.route("/watchHistory")
-  .get(
-    verifyToken,
-    getwatchHistory
-  )
+router.route("/watchHistory").get(verifyToken, getwatchHistory);
 
-
-  router.route("/UpdateWatchHistory/:videoid")
-.patch(verifyToken,updatewatchhistory);
+router
+  .route("/UpdateWatchHistory/:videoid")
+  .patch(verifyToken, updatewatchhistory);
 export default router;

@@ -6,18 +6,13 @@ import { verifyToken } from "../middlewares/auth.middleware.js";
 const router = Router();
 
 router.route("/uploadVideo").post(
-    verifyToken,
+  verifyToken,
   upload.fields([
-      {name:"videoFile",maxCount:1},
-      {name:"thumbnail",maxCount:1}
-    ]),
-  
-    uploadvideo
-    )
+    { name: "videoFile", maxCount: 1 },
+    { name: "thumbnail", maxCount: 1 },
+  ]),
 
+  uploadvideo
+);
 
-
-
-
-    export default router;
-    
+export default router;
