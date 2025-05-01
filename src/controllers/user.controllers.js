@@ -198,11 +198,11 @@ const logoutUser = asyncHandler(async (req, res) => {
   //   user.refreshToken=undefined;
   //   user.save({validateBeforeSave:false})
   //=============================
-  User.findByIdAndUpdate(
+  const user=await User.findByIdAndUpdate(
     req.user?._id,
     {
-      $set: {
-        refreshToken: undefined,
+      $unset: {
+       refreshToken:0 ////completely remove the refrshtoken
       },
     },
     {
@@ -220,7 +220,7 @@ const logoutUser = asyncHandler(async (req, res) => {
     .status(200)
     .clearCookie("accessToken", options)
     .clearCookie("refreshToken", options)
-    .json(new ApiResponse(200, {}, "user logged out successfully"));
+    .json(new ApiResponse(200,{}, "user logged out successfully"));
 });
 
 const refreshTokenUpdate = asyncHandler(async (req, res, next) => {
