@@ -33,6 +33,7 @@ const uploadonCloudinary = async (filePath) => {
 
 const deleteFile = async (filePath) => {
   console.log("filePath", filePath);
+  if(!filePath) filePath="not found"
   try {
     const publicId = extractPublicId(filePath);
     console.log("publicId", publicId);

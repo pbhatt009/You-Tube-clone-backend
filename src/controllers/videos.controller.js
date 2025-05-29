@@ -2,9 +2,10 @@ import { asyncHandler } from "../utils/asynccHandeler.js";
 import { Video } from "../models/video.model.js";
 import { ApiError } from "../utils/apieror.js";
 import fs from "fs";
-import { uploadonCloudinary } from "../utils/cloudinary.js";
+import { uploadonCloudinary,deleteFile} from "../utils/cloudinary.js";
 import { ApiResponse } from "../utils/apiResponse.js";
 function remove(videofilepath, thumbnailfilepath) {
+  console.log("thumbanilpath",thumbnailfilepath)
   if (videofilepath) fs.unlinkSync(videofilepath);
   if (thumbnailfilepath) fs.unlinkSync(thumbnailfilepath);
 }
@@ -71,4 +72,59 @@ const uploadvideo = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, videouploaded, "Video Uploaded successfully"));
 });
 
-export { uploadvideo };
+const getvideobyid=asyncHandler(async(req,res)=>{
+  const {id}=req.params
+  if(!id) throw(new ApiError(400,"video not found"));
+  const video=await Video.findById(id);
+  if(!video) throw(new ApiError(400,"video not found"));
+  return res.status(200).json(new ApiResponse(200,video,"video fetched succefully"));
+})
+
+const updatevideo=asyncHandler(async(req,res)=>{
+  const{id}=req.params
+   const{tittle,description}=req.body
+   const thumbnail=req.file
+   if(!tittle||!description){
+     remove("",thumbnail.path);
+    throw(new ApiError(400,"give all inputs"));
+   }
+    if(!id){
+      remove("",thumbnail.path);
+       throw(new ApiError(400,"video not found"));
+    }
+  const video=await Video.findById(id);
+  if(!video) {
+     remove("",thumbnail.path);
+    throw(new ApiError(400,"video not found"));
+  }
+  const deletethumb=await deleteFile(video.thumbnail)
+  // console.log("hiii",deletethumb)
+    let newthumb=null
+    if(thumbnail)  newthumb=await uploadonCloudinary(thumbnail.path);
+
+  video.thumbnail=(newthumb)?newthumb.url:null
+  video.tittle=tittle
+  video.description=description
+  await video.save({validateBeforeSave: false})
+ return  res.status(200).json(new ApiResponse(200,video,"video updated succesfully"))
+  
+
+})
+
+const deleteVideo=asyncHandler(async(req,res)=>{
+  const {id}=req.params;
+   if(!id) throw(new ApiError(400,"video not found"));
+  const video=await Video.findById(id);
+  if(!video) throw(new ApiError(400,"video not found"));
+  if(video.videoFile) await deleteFile(video.videoFile)
+  if(video.thumbnail) await  deleteFile(video.thumbnail)
+  const result=await Video.findByIdAndDelete(id)
+  if(!result) throw(new ApiError(500,"eror in deleting video"));
+  return res.status(200).json(new ApiResponse(200,result,"video deleted succefully"));
+
+
+})
+
+
+
+export { uploadvideo ,getvideobyid,updatevideo,deleteVideo};

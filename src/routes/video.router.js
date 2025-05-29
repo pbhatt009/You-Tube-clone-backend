@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { uploadvideo } from "../controllers/videos.controller.js";
+import { uploadvideo,getvideobyid,updatevideo,deleteVideo } from "../controllers/videos.controller.js";
 import { upload } from "../middlewares/multer.js";
 import { verifyToken } from "../middlewares/auth.middleware.js";
 
@@ -14,5 +14,18 @@ router.route("/uploadVideo").post(
 
   uploadvideo
 );
+router.route("/getvideo/:id").get(
+  verifyToken,
+  getvideobyid
+)
+router.route("/:id/update").patch(
+  verifyToken,
+  upload.single("thumbnail"),
+  updatevideo
+)
+router.route("/:id/delete").delete(
+  verifyToken,
+deleteVideo
+)
 
 export default router;
