@@ -416,11 +416,14 @@ const getuserchannel = asyncHandler(async (req, res) => {
   if (!username?.trim()) {
     throw new ApiError(400, "username is required");
   }
+  const match={
+    username:{ $regex: username , $options: 'i' }
+  }
   const channel = await User.aggregate([
     {
-      $match: {
-        username: username?.toLowerCase(),
-      },
+      $match: match
+        
+      
     },
     {
       $lookup: {
