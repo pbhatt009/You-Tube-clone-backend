@@ -4,6 +4,8 @@ import { ApiError } from "../utils/apieror.js";
 import fs from "fs";
 import { uploadonCloudinary,deleteFile} from "../utils/cloudinary.js";
 import { ApiResponse } from "../utils/apiResponse.js";
+import mongoose from "mongoose";
+
 function remove(videofilepath, thumbnailfilepath) {
   console.log("thumbanilpath",thumbnailfilepath)
   if (videofilepath) fs.unlinkSync(videofilepath);
@@ -73,6 +75,10 @@ const uploadvideo = asyncHandler(async (req, res) => {
 });
 
 const getvideobyid=asyncHandler(async(req,res)=>{
+   const userid = req.user?._id;
+   if (!userid) {
+   throw new ApiError(401, "user not found");
+  }
   const {id}=req.params
   if(!id) throw(new ApiError(400,"video not found"));
   const video=await Video.findById(id);
@@ -84,6 +90,12 @@ const updatevideo=asyncHandler(async(req,res)=>{
   const{id}=req.params
    const{tittle,description}=req.body
    const thumbnail=req.file
+     const userid = req.user?._id;
+ 
+  if (!userid) {
+    remove("",thumbnail.path);
+    throw new ApiError(401, "user not found");
+  }
    if(!tittle||!description){
      remove("",thumbnail.path);
     throw(new ApiError(400,"give all inputs"));
@@ -113,6 +125,10 @@ const updatevideo=asyncHandler(async(req,res)=>{
 
 const deleteVideo=asyncHandler(async(req,res)=>{
   const {id}=req.params;
+  const userid = req.user?._id;
+  if (!userid) {
+   throw new ApiError(401, "user not found");
+  }
    if(!id) throw(new ApiError(400,"video not found"));
   const video=await Video.findById(id);
   if(!video) throw(new ApiError(400,"video not found"));
@@ -124,7 +140,109 @@ const deleteVideo=asyncHandler(async(req,res)=>{
 
 
 })
+const changestatus=asyncHandler(async(req,res)=>{
+ const{id}=req.params
+   const userid = req.user?._id;
+ if (!userid) {
+   throw new ApiError(401, "user not found");
+  }
+    if(!id) throw(new ApiError(400,"video not found"));
+  const video=await Video.findById(id);
+  if(!video) throw(new ApiError(400,"video not found"));
+  video.isPublic=(video.isPublic)?false:true;
+ await video.save({validateBeforeSave: false})
+ return res.status(200).json(new ApiResponse(200,video,"status changed succefully"));
+})
+const getallvideos=asyncHandler(async(req,res)=>{
+ const userid = req.user?._id;
+ if (!userid) {
+ throw new ApiError(401, "user not found");
+  }
+  const{page=1,limit=10,query="",sortBy="createdAt",sortType=-1,mine=-1}=req.query
+  ////sorttype=1 asscending order .sort type=-1 descending order
+   console.log(page,limit,sortBy)
+   console.log('hi');
+  ////creating a filter for query
+  const filter={};
+  if(query){
+    filter.tittle= { $regex: query, $options: 'i' }; ///i for insensitive serach
+  }
+const sortStage = {
+  $sort: {
+    [sortBy]: parseInt(sortType)
+  },
+};
+const aggregation=Video.aggregate([
+  {
+    $match:(mine==1)?{
+      owner:new mongoose.Types.ObjectId(req.user._id),
+    }:{}
+  },
+    {
+      $match:filter
+      
+    },
+   sortStage,
+    {
+      $lookup:{
+        from:"users",
+        localField:"owner",
+        foreignField:"_id",
+        as:"ownerinfo",
+        pipeline:[
+        {
+            $project: {
+                    username: 1,
+                    fullName: 1,
+                    avatar: 1,
+                  },
+        }
+        ]
+
+      }
+    },
+    {
+      $addFields:{
+        ownerinfo:{
+          $first:"$ownerinfo"
+        }
+      }
+    },
+   
+  ])
+  // console.log("dataa",aggregation)
+const options={
+   page:parseInt(page),
+   limit:parseInt(limit),
+   customLabels: {
+  totalDocs: 'itemCount',
+  docs: 'itemsList',
+  limit: 'perPage',
+  page: 'currentPage',
+  nextPage: 'next',
+  prevPage: 'prev',
+  totalPages: 'pageCount',
+  hasPrevPage: 'hasPrev',
+  hasNextPage: 'hasNext',
+  pagingCounter: 'pageCounter',
+  meta: 'paginator'
+}
+
+
+}
+  /*expamle simple version
+const videos = await Video.find()
+  .sort({ views: -1 }) // Sort by views in descending order
+  .skip(((page-1)*limit) // Skip the appropriate number of videos
+  .limit(limit); // Limit the number of videos returned:contentReference[oaicite:5]{index=5}
+*/
+// console.log(typeof(Video.aggregatePaginate))
+const result=await Video.aggregatePaginate(aggregation,options);
+   if(!result) throw(new ApiError(500,"eror in fetching videos"))
+    return res.status(200).json(new ApiResponse(200,result,"videos fetched succefully"));
+})
 
 
 
-export { uploadvideo ,getvideobyid,updatevideo,deleteVideo};
+
+export { uploadvideo ,getvideobyid,updatevideo,deleteVideo,changestatus,getallvideos};
