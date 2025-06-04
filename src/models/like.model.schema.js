@@ -8,10 +8,6 @@ video:{
       type:mongoose.Schema.Types.ObjectId,
     ref:"Video"
 },
-tweet:{
-      type:mongoose.Schema.Types.ObjectId,
-    ref:"Tweet"
-},
 likedby:{
       type:mongoose.Schema.Types.ObjectId,
     ref:"User"

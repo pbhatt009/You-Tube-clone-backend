@@ -3,7 +3,7 @@ import { Comment } from "../models/comments.model.js";
 import { asyncHandler } from "../utils/asynccHandeler.js";
 import { ApiError } from "../utils/apieror.js";
 import { ApiResponse } from "../utils/apiResponse.js";
-const addComment=asyncHandler(async(requestAnimationFrame,res)=>{
+const addComment=asyncHandler(async(req,res)=>{
 const {videoid}=req.params;
 if(!videoid) throw new ApiError(400,"video not found");
 const {_id}=req.user;
@@ -15,8 +15,9 @@ const newcomment=await Comment.create({
     owner:_id,
     video:videoid
 })
+console.log(newcomment)
 if(!newcomment) throw new ApiError(500,"eror in creating new comment");
-return res.status(200).json(200,newcomment,"comment added sucessfully");
+return res.status(200).json(new ApiResponse(200,newcomment,"comment added sucessfully"));
 })
 const updateComment=asyncHandler(async(req,res)=>{
 const {videoid,commentid}=req.params;
@@ -33,7 +34,7 @@ if(!comment)  throw new ApiError(400,"comment not found");
   }
   comment.content=content.trim();
   await comment.save({validateBeforeSave: false})
-  return res.status(200).json(200,comment,"comment updated succefully");
+  return res.status(200).json(new ApiResponse( 200,comment,"comment updated succefully"));
 
 })
 const deleteComment=asyncHandler(async(req,res)=>{
@@ -50,7 +51,7 @@ if(!_id) throw new ApiError(400,"user is not found");
   }
  const result=await Comment.findByIdAndDelete(commentid);
  if(!result) throw new ApiError(500,"eror in deleting comment")
-   return res.status(200).json(200,result,"comment deleted succefully");
+   return res.status(200).json(new ApiResponse(200,result,"comment deleted succefully"));
 })
 const getallcomments=asyncHandler(async(req,res)=>{
     const {page=1,limit=20} =req.query;
@@ -72,6 +73,26 @@ const agregation=Comment.aggregate([
 
     },
     {
+$lookup:{
+    from:"likes",
+    localField:"_id",
+    foreignField:"comment",
+    as:"likedby",
+}
+},
+ {
+            $addFields:{
+                likedby:{
+                    $size:"$likedby"
+                }
+
+                
+            }
+        },
+    
+
+    
+    {
         $lookup:{
             from:"users",
             localField:"owner",
@@ -92,7 +113,7 @@ const agregation=Comment.aggregate([
     },
     {
         $addFields:{
-            owner:{
+            ownerinfo:{
                 $first:"$ownerinfo",
         }
     }
@@ -120,7 +141,7 @@ const options={
 }
 const result=await Comment.aggregatePaginate(agregation,options);
 if(!result) return new ApiError(500,"eror in fetching comment");
-return res.status(200).json(200,result,"commented fetched succefully");
+return res.status(200).json(new ApiResponse(200,result,"commented fetched succefully"));
 })
 
 export{addComment,getallcomments,deleteComment,updateComment};
