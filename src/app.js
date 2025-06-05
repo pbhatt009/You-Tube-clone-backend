@@ -31,6 +31,7 @@ import userRouter from "./routes/user.routes.js";
 import videorouter from "./routes/video.router.js";
 import subscripitionRouter from "./routes/subscripition.routers.js";
 import Commentrouter  from "./routes/comment.route.js"
+import likerouter from "./routes/like.router.js"
 ///route decleartion
 
 // app.get('/', (req, res) => {
@@ -40,3 +41,4 @@ app.use("/api/v1/user", userRouter);
 app.use("/api/v1/video", videorouter);
 app.use("/api/v1/subscription", subscripitionRouter);
 app.use("/api/v1/comment",Commentrouter);
+app.use("/api/v1/like",likerouter);

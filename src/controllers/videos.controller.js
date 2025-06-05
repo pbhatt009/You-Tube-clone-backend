@@ -81,7 +81,36 @@ const getvideobyid=asyncHandler(async(req,res)=>{
   }
   const {id}=req.params
   if(!id) throw(new ApiError(400,"video not found"));
-  const video=await Video.findById(id);
+  const video=await Video.aggregate([
+     {$match:{
+         _id:new mongoose.Types.ObjectId(id),
+     }
+    },
+    {
+      $lookup:{
+        from:"likes",
+        foreignField:"video",
+        localField:"_id",
+        as:"likedby"
+      }
+    },
+    {
+         $addFields:{
+            isliked: {
+            $cond: {
+            if: { $in: [userid,"$likedby.likedby"] },
+            then: true,
+            else: false,
+          },
+    },
+                likedby:{
+                    $size:"$likedby"
+                }
+
+                
+            }
+    }
+  ])
   if(!video) throw(new ApiError(400,"video not found"));
   return res.status(200).json(new ApiResponse(200,video,"video fetched succefully"));
 })

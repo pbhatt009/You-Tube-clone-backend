@@ -82,6 +82,13 @@ $lookup:{
 },
  {
             $addFields:{
+            isliked: {
+            $cond: {
+            if: { $in: [_id, "$likedby.likedby"] },
+            then: true,
+            else: false,
+          },
+    },
                 likedby:{
                     $size:"$likedby"
                 }
@@ -115,7 +122,8 @@ $lookup:{
         $addFields:{
             ownerinfo:{
                 $first:"$ownerinfo",
-        }
+        },
+    
     }
     },
   
