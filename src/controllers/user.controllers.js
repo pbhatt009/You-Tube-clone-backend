@@ -572,6 +572,7 @@ const updatewatchhistory = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, {}, "watch history updated succefully"));
 });
 
+
 export {
   registerUser,
   loginUser,

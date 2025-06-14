@@ -34,9 +34,10 @@ import Commentrouter  from "./routes/comment.route.js"
 import likerouter from "./routes/like.router.js"
 ///route decleartion
 
-// app.get('/', (req, res) => {
-//   res.send('Hello World!')
-// })
+app.get('/api', (req, res) => {
+  console.log("hi")
+  res.send('Hello World!')
+})
 app.use("/api/v1/user", userRouter);
 app.use("/api/v1/video", videorouter);
 app.use("/api/v1/subscription", subscripitionRouter);

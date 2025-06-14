@@ -271,7 +271,23 @@ const result=await Video.aggregatePaginate(aggregation,options);
     return res.status(200).json(new ApiResponse(200,result,"videos fetched succefully"));
 })
 
+const increseview=asyncHandler(async(req,res)=>{
+   const userid = req.user?._id;
+ if (!userid) {
+ throw new ApiError(401, "user not found");
+  }
+   const{id}=req.params;
+    if(!id) throw(new ApiError(400,"video not found"));
+     const result = await Video.findByIdAndUpdate(
+    id,
+    { $inc: { views: 1 } },
+    { new: true }
+  );
+  if(!result) throw(new ApiError(500,"eror in increasing views"))
+  return res.status(200).json(new ApiResponse(200,result,"views increased succefully"));
+
+})
 
 
 
-export { uploadvideo ,getvideobyid,updatevideo,deleteVideo,changestatus,getallvideos};
+export { uploadvideo ,getvideobyid,updatevideo,deleteVideo,changestatus,getallvideos,increseview};
