@@ -6,7 +6,7 @@ import { ApiResponse } from "../utils/apiResponse.js";
 
 const subscription = asyncHandler(async (req, res) => {
   const subscriber = req.user;
-  // console.log(subscriber?._id)
+  // console.log(subscriber?._id) 
   if (!subscriber) throw new ApiError(401, "username not found");
   const { channelname } = req.params;
 

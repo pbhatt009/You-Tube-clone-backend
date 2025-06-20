@@ -21,10 +21,12 @@ const router = Router();
 
 router.route("/register").post(
   ///storing image in temp folder using multer
+
   upload.fields([
     { name: "avatar", maxCount: 1 },
     { name: "coverImage", maxCount: 1 },
   ]),
+
   registerUser
 );
 

@@ -42,6 +42,7 @@ const registerUser = asyncHandler(async (req, res) => {
   ///check for user creation
   ///return response
   let coverImagelocalpath = null;
+  // console.log("req.files", req.body);
   if (
     req.files &&
     Array.isArray(req.files.coverImage) &&
@@ -81,7 +82,7 @@ const registerUser = asyncHandler(async (req, res) => {
 
   if (!isValidEmail(email)) {
     remove();
-    new ApiError(409, "email is not valid");
+   throw  new ApiError(409, "email is not valid");
   }
 
   ///check weather user already exists
@@ -98,13 +99,13 @@ const registerUser = asyncHandler(async (req, res) => {
   ///check for image,check for avatar and upload image to cloudinary
   /////avatra is required to upload
   //   console.log("req.files", req.files);
-  console.log("avatarlocalpath", avatarlocalpath);
-  console.log("coverImagelocalpath", coverImagelocalpath);
+  // console.log("avatarlocalpath", avatarlocalpath);
+  // console.log("coverImagelocalpath", coverImagelocalpath);
 
   let avatar = await uploadonCloudinary(avatarlocalpath);
   let coverImage = await uploadonCloudinary(coverImagelocalpath);
   /////crreate user
-  console.log("avatar", avatar);
+  // console.log("avatar", avatar);
   const user = await User.create({
     fullName,
     avatar: avatar.url,
@@ -140,12 +141,12 @@ const loginUser = asyncHandler(async (req, res) => {
   //if password is not matched
   ///create access token and refresh token
   console.log("req.body", req.body);
-  const { email, username, password } = req.body;
-  if (!username && !email) {
+  const { emailorusername, password } = req.body;
+  if (!emailorusername?.trim()) {
     throw new ApiError(400, "username or email is required");
   }
   let user = await User.findOne({
-    $or: [{ username }, { email }],
+    $or: [{ username:emailorusername }, { email:emailorusername }],
   });
   if (!user) {
     throw new ApiError(401, "user not found");

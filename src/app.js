@@ -1,7 +1,7 @@
 import express from "express";
 import cors from "cors";
 import cookieParser from "cookie-parser";
-
+import { ApiError } from "./utils/apieror.js";
 export const app = express();
 app.use(
   cors({
@@ -43,3 +43,24 @@ app.use("/api/v1/video", videorouter);
 app.use("/api/v1/subscription", subscripitionRouter);
 app.use("/api/v1/comment",Commentrouter);
 app.use("/api/v1/like",likerouter);
+
+app.use((err, req, res, next) => {
+
+  if (err instanceof ApiError) {
+    // console.log("here is a eror")
+    return res.status(err.statusCode).json({
+      success: false,
+      message: err.message,
+      errors: err.errors,
+      data: err.data,
+    });
+  }
+
+  // Default error handler for uncaught errors
+  return res.status(500).json({
+    success: false,
+    message: "Internal Server Error",
+  });
+});
+
+
