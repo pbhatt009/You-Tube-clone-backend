@@ -12,6 +12,7 @@ import {
   getuserchannel,
   getwatchHistory,
   updatewatchhistory,
+  getsubscripition
 } from "../controllers/user.controllers.js";
 
 import { upload } from "../middlewares/multer.js";
@@ -53,6 +54,7 @@ router
 router.route("/channel/:username").get(verifyToken, getuserchannel);
 
 router.route("/watchHistory").get(verifyToken, getwatchHistory);
+router.route("/subscripition").get(verifyToken,getsubscripition);
 
 router
   .route("/UpdateWatchHistory/:videoid")

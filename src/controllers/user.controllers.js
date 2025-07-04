@@ -6,8 +6,11 @@ import jwt from "jsonwebtoken";
 import fs, { appendFile } from "fs";
 import mongoose from "mongoose";
 import { ObjectId } from "mongodb";
+import { Subscription } from "../models/subscription.model.js";
 
 import { uploadonCloudinary, deleteFile } from "../utils/cloudinary.js";
+import { lookup } from "dns";
+import { pipeline } from "stream";
 function isValidEmail(email) {
   const emailRegex = /^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$/;
   return emailRegex.test(email);
@@ -183,7 +186,7 @@ const loginUser = asyncHandler(async (req, res) => {
     .json(
       new ApiResponse(
         200,
-        { user, accessToken, refreshToken },
+        user,
         "user logged in successfully"
       )
     );
@@ -417,9 +420,14 @@ const getuserchannel = asyncHandler(async (req, res) => {
   if (!username?.trim()) {
     throw new ApiError(400, "username is required");
   }
-  const match={
-    username:{ $regex: username , $options: 'i' }
-  }
+
+    const match = {
+  $or: [
+    { username: { $regex: username, $options: 'i' } },
+    { fullName: { $regex: username, $options: 'i' } }
+  ]
+}
+  
   const channel = await User.aggregate([
     {
       $match: match
@@ -488,12 +496,10 @@ const getuserchannel = asyncHandler(async (req, res) => {
       },
     },
   ]);
-  if (!channel?.length) {
-    throw new ApiError(404, "channel not found");
-  }
+
   return res
     .status(200)
-    .json(new ApiResponse(200, channel[0], "channel fetched successfully"));
+    .json(new ApiResponse(200, channel, "channel fetched successfully"));
 });
 
 const getwatchHistory = asyncHandler(async (req, res) => {
@@ -573,6 +579,63 @@ const updatewatchhistory = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, {}, "watch history updated succefully"));
 });
 
+const getsubscripition=asyncHandler(async(req,res)=>{
+  const userid = req.user?._id;
+  if (!userid) throw new ApiError(401, "user not found");
+  const result=await Subscription.aggregate([
+    {
+      $match:{
+        subscriber: new mongoose.Types.ObjectId(userid),
+      }
+    },
+    {
+      $lookup:{
+        from:'users',
+        localField:'channel',
+        foreignField:'_id',
+        as:'Chanelinfo',
+     
+      pipeline:[
+        {
+            $lookup:{
+        from:'subscriptions',
+        localField:'_id',
+        foreignField:'channel',
+        as:'subs'
+      }, 
+
+        },
+        {
+          $addFields:{
+           subscriberCount: {
+          $size: "$subs",
+        },
+        issubscribed:true
+          }
+        }
+        
+        ,{
+           $project:{
+            username:1,
+            fullName:1,
+            avatar:1,
+            coverImage:1,
+            subscriberCount:1,
+            issubscribed:1,
+            
+           }
+      }]
+    }
+
+    }
+  ])
+ 
+
+return res.status(200).json(new ApiResponse(200,result,"subscripition fetched succefully"));
+
+
+})
+
 
 export {
   registerUser,
@@ -587,4 +650,5 @@ export {
   getuserchannel,
   getwatchHistory,
   updatewatchhistory,
+  getsubscripition
 };
