@@ -93,6 +93,7 @@ const registerUser = asyncHandler(async (req, res) => {
   if (await User.findOne({ username })) {
     remove();
     throw new ApiError(409, "Username already exists");
+    return;
   }
   if (await User.findOne({ email })) {
     remove();
@@ -456,13 +457,7 @@ const getuserchannel = asyncHandler(async (req, res) => {
         localField: "_id",
         foreignField: "owner",
         as: "Channelvideos",
-        pipeline: [
-          {
-            $project: {
-              owner: 0,
-            },
-          },
-        ],
+    
       },
     },
 
@@ -483,6 +478,30 @@ const getuserchannel = asyncHandler(async (req, res) => {
         },
       },
     },
+
+   {
+    $addFields: {
+      Channelvideos: {
+        $map: {
+          input: "$Channelvideos",
+          as: "video",
+          in: {
+            $mergeObjects: [
+              "$$video",
+              {
+                ownerinfo: {
+                  _id: "$_id",
+                  username: "$username",
+                  fullName: "$fullName",
+                  avatar: "$avatar"
+                }
+              }
+            ]
+          }
+        }
+      }
+    }
+  },
     {
       $project: {
         fullName: 1,
