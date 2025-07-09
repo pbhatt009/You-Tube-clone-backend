@@ -178,6 +178,8 @@ const loginUser = asyncHandler(async (req, res) => {
     ///secure means cookie is only sent over https
     httpOnly: true,
     secure: true,
+    sameSite: "None"
+
   };
 
   return res
@@ -220,6 +222,8 @@ const logoutUser = asyncHandler(async (req, res) => {
     ///secure means cookie is only sent over https
     httpOnly: true,
     secure: true,
+    sameSite: "None"
+
   };
   return res
     .status(200)
@@ -273,6 +277,8 @@ const refreshTokenUpdate = asyncHandler(async (req, res, next) => {
       ///secure means cookie is only sent over https
       httpOnly: true,
       secure: true,
+      sameSite: "None"
+
     };
     return res
       .status(200)
