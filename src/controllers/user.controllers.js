@@ -312,6 +312,7 @@ const changePassword = asyncHandler(async (req, res) => {
         401,
         "new password should not be same as old password"
       );
+      return;
     }
     if (!(await user.ispasswordMatch(oldPassword))) {
       throw new ApiError(401, "old password is incorrect");
@@ -493,7 +494,8 @@ const getuserchannel = asyncHandler(async (req, res) => {
                   _id: "$_id",
                   username: "$username",
                   fullName: "$fullName",
-                  avatar: "$avatar"
+                  avatar: "$avatar",
+                  email:"$email"
                 }
               }
             ]
@@ -512,6 +514,7 @@ const getuserchannel = asyncHandler(async (req, res) => {
         channelsSubscribedToCount: 1,
         issubscribed: 1,
         Channelvideos: 1,
+        email:1
       },
     },
   ]);

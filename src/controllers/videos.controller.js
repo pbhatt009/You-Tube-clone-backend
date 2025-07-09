@@ -5,6 +5,7 @@ import fs from "fs";
 import { uploadonCloudinary,deleteFile} from "../utils/cloudinary.js";
 import { ApiResponse } from "../utils/apiResponse.js";
 import mongoose from "mongoose";
+import { lookup } from "dns";
 
 function remove(videofilepath, thumbnailfilepath) {
   console.log("thumbanilpath",thumbnailfilepath)
@@ -95,6 +96,60 @@ const getvideobyid=asyncHandler(async(req,res)=>{
       }
     },
     {
+    $lookup:{
+    from:"users",
+        foreignField:"_id",
+        localField:"owner",
+        as:"ownerinfo",
+        pipeline:[
+         {
+      $lookup: {
+        from: "subscriptions",
+        localField: "_id",
+        foreignField: "channel",
+        as: "subscribers",
+      },
+    },
+      {
+        $addFields:{
+           subscriberCount: {
+          $size: "$subscribers",
+        },
+      
+        issubscribed: {
+          $cond: {
+            if: { $in: [req.user?._id, "$subscribers.subscriber"] },
+            then: true,
+            else: false,
+          },
+        },
+        }
+      },
+          {
+            $project:{
+              avatar:1,
+              username:1,
+              fullName:1,
+              subscriberCount:1,
+               issubscribed:1
+
+            }
+          }
+
+        ]
+
+    }
+  },
+  {
+     
+            $addFields:{
+              ownerinfo:{
+                $first:'$ownerinfo'
+              }
+            }
+           
+  },
+    {
          $addFields:{
             isliked: {
             $cond: {
@@ -112,7 +167,7 @@ const getvideobyid=asyncHandler(async(req,res)=>{
     }
   ])
   if(!video) throw(new ApiError(400,"video not found"));
-  return res.status(200).json(new ApiResponse(200,video,"video fetched succefully"));
+  return res.status(200).json(new ApiResponse(200,video[0],"video fetched succefully"));
 })
 
 const updatevideo=asyncHandler(async(req,res)=>{
