@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { uploadvideo,getvideobyid,updatevideo,deleteVideo,changestatus,getallvideos,increseview } from "../controllers/videos.controller.js";
+import { uploadvideo,getvideobyid,updatevideo,deleteVideo,changestatus,getallvideos,increseview,getallminevideos } from "../controllers/videos.controller.js";
 import { upload } from "../middlewares/multer.js";
 import { verifyToken } from "../middlewares/auth.middleware.js";
 
@@ -15,7 +15,7 @@ router.route("/uploadVideo").post(
   uploadvideo
 );
 router.route("/getvideo/:id").get(
-  verifyToken,
+
   getvideobyid
 )
 router.route("/:id/update").patch(
@@ -31,10 +31,16 @@ router.route("/:id/changestatus").patch(
   verifyToken,
   changestatus
 )
+
 router.route("/getallvideos").get(
-  verifyToken,
+
   getallvideos
 )
+router.route("/getallminevideos").get(
+ verifyToken,
+  getallminevideos
+)
+ 
 router.route("/:id/increseview").patch(
   verifyToken,
   increseview

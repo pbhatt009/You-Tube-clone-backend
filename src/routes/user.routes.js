@@ -51,7 +51,7 @@ router
   .route("/update-cover")
   .patch(verifyToken, upload.single("coverImage"), updateCoverImage);
 
-router.route("/channel/:username").get(verifyToken, getuserchannel);
+router.route("/channel/:username").get(getuserchannel);
 
 router.route("/watchHistory").get(verifyToken, getwatchHistory);
 router.route("/subscripition").get(verifyToken,getsubscripition);

@@ -423,25 +423,132 @@ const updateCoverImage = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, user, "cover image updated suceesfully"));
 });
 
+// const getuserchannel = asyncHandler(async (req, res) => {
+//   const { username } = req.params;
+//   if (!username?.trim()) {
+//     throw new ApiError(400, "username is required");
+//   }
+
+//     const match = {
+//   $or: [
+//     { username: { $regex: username, $options: 'i' } },
+//     { fullName: { $regex: username, $options: 'i' } }
+//   ]
+// }
+  
+//   const channel = await User.aggregate([
+//     {
+//       $match: match
+        
+      
+//     },
+//     {
+//       $lookup: {
+//         from: "subscriptions",
+//         localField: "_id",
+//         foreignField: "channel",
+//         as: "subscribers",
+//       },
+//     },
+//     {
+//       $lookup: {
+//         from: "subscriptions",
+//         localField: "_id",
+//         foreignField: "subscriber",
+//         as: "subscribedTo",
+//       },
+//     },
+//     {
+//       $lookup: {
+//         from: "videos",
+//         localField: "_id",
+//         foreignField: "owner",
+//         as: "Channelvideos",
+    
+//       },
+//     },
+
+//     {
+//       $addFields: {
+//         subscriberCount: {
+//           $size: "$subscribers",
+//         },
+//         channelsSubscribedToCount: {
+//           $size: "$subscribedTo",
+//         },
+//         issubscribed: {
+//           $cond: {
+//             if: { $in: [req.user?._id, "$subscribers.subscriber"] },
+//             then: true,
+//             else: false,
+//           },
+//         },
+//       },
+//     },
+
+//    {
+//     $addFields: {
+//       Channelvideos: {
+//         $map: {
+//           input: "$Channelvideos",
+//           as: "video",
+//           in: {
+//             $mergeObjects: [
+//               "$$video",
+//               {
+//                 ownerinfo: {
+//                   _id: "$_id",
+//                   username: "$username",
+//                   fullName: "$fullName",
+//                   avatar: "$avatar",
+//                   email:"$email"
+//                 }
+//               }
+//             ]
+//           }
+//         }
+//       }
+//     }
+//   },
+//     {
+//       $project: {
+//         fullName: 1,
+//         username: 1,
+//         avatar: 1,
+//         coverImage: 1,
+//         subscriberCount: 1,
+//         channelsSubscribedToCount: 1,
+//         issubscribed: 1,
+//         Channelvideos: 1,
+        
+//       },
+    
+//     },
+ 
+//   ]);
+
+//   return res
+//     .status(200)
+//     .json(new ApiResponse(200, channel, "channel fetched successfully"));
+// });
 const getuserchannel = asyncHandler(async (req, res) => {
   const { username } = req.params;
+  const userId = req.user?._id;
+
   if (!username?.trim()) {
     throw new ApiError(400, "username is required");
   }
 
-    const match = {
-  $or: [
-    { username: { $regex: username, $options: 'i' } },
-    { fullName: { $regex: username, $options: 'i' } }
-  ]
-}
-  
-  const channel = await User.aggregate([
-    {
-      $match: match
-        
-      
-    },
+  const match = {
+    $or: [
+      { username: { $regex: username, $options: 'i' } },
+      { fullName: { $regex: username, $options: 'i' } }
+    ]
+  };
+
+  // Base pipeline
+  const pipeline = [
+    { $match: match },
     {
       $lookup: {
         from: "subscriptions",
@@ -464,29 +571,29 @@ const getuserchannel = asyncHandler(async (req, res) => {
         localField: "_id",
         foreignField: "owner",
         as: "Channelvideos",
-    
       },
     },
-
     {
       $addFields: {
-        subscriberCount: {
-          $size: "$subscribers",
-        },
-        channelsSubscribedToCount: {
-          $size: "$subscribedTo",
-        },
-        issubscribed: {
-          $cond: {
-            if: { $in: [req.user?._id, "$subscribers.subscriber"] },
-            then: true,
-            else: false,
-          },
-        },
-      },
-    },
+        subscriberCount: { $size: "$subscribers" },
+        channelsSubscribedToCount: { $size: "$subscribedTo" }
+      }
+    }
+  ];
 
-   {
+  // Only add issubscribed if user is logged in
+  if (userId) {
+    pipeline.push({
+      $addFields: {
+        issubscribed: {
+          $in: [userId, "$subscribers.subscriber"]
+        }
+      }
+    });
+  }
+
+  // Add video ownerinfo mapping
+  pipeline.push({
     $addFields: {
       Channelvideos: {
         $map: {
@@ -501,7 +608,7 @@ const getuserchannel = asyncHandler(async (req, res) => {
                   username: "$username",
                   fullName: "$fullName",
                   avatar: "$avatar",
-                  email:"$email"
+                  email: "$email"
                 }
               }
             ]
@@ -509,26 +616,34 @@ const getuserchannel = asyncHandler(async (req, res) => {
         }
       }
     }
-  },
-    {
-      $project: {
-        fullName: 1,
-        username: 1,
-        avatar: 1,
-        coverImage: 1,
-        subscriberCount: 1,
-        channelsSubscribedToCount: 1,
-        issubscribed: 1,
-        Channelvideos: 1,
-        email:1
-      },
-    },
-  ]);
+  });
+
+  // Final project stage
+  const projectStage = {
+    fullName: 1,
+    username: 1,
+    avatar: 1,
+    coverImage: 1,
+    subscriberCount: 1,
+    channelsSubscribedToCount: 1,
+    Channelvideos: 1,
+    email: 1
+  };
+
+  if (userId) {
+    projectStage.issubscribed = 1;
+  }
+
+  pipeline.push({ $project: projectStage });
+
+  // Run aggregation
+  const channel = await User.aggregate(pipeline);
 
   return res
     .status(200)
     .json(new ApiResponse(200, channel, "channel fetched successfully"));
 });
+
 
 const getwatchHistory = asyncHandler(async (req, res) => {
   const user = req.user;
