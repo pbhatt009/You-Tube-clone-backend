@@ -14,6 +14,7 @@ import {
   updatewatchhistory,
   getsubscripition
 } from "../controllers/user.controllers.js";
+import {sendEmail} from "../controllers/nodemailer.js";
 
 import { upload } from "../middlewares/multer.js";
 import { verifyToken } from "../middlewares/auth.middleware.js";
@@ -55,6 +56,7 @@ router.route("/channel/:username").get(getuserchannel);
 
 router.route("/watchHistory").get(verifyToken, getwatchHistory);
 router.route("/subscripition").get(verifyToken,getsubscripition);
+router.route("/sendEmail").post(sendEmail);
 
 router
   .route("/UpdateWatchHistory/:videoid")

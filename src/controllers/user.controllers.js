@@ -15,7 +15,7 @@ function isValidEmail(email) {
   const emailRegex = /^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$/;
   return emailRegex.test(email);
 }
-////function for generating tokens
+
 const generatetokens = async (userId) => {
   try {
     const user = await User.findById(userId);
@@ -72,33 +72,12 @@ const registerUser = asyncHandler(async (req, res) => {
   }
   //   console.log("req.body", req.body);
   const { fullName, email, username, password } = req.body;
-  //   console.log("email", email);
-  //   console.log("username", username);
-  if (
-    [fullName, email, username, password].some((field) => field.trim() === "")
-  ) {
-    ///if any field is empty
-    remove();
-    throw new ApiError(400, "all fields are required");
-  }
-  ///check for email validation
 
-  if (!isValidEmail(email)) {
-    remove();
-   throw  new ApiError(409, "email is not valid");
-  }
+
 
   ///check weather user already exists
 
-  if (await User.findOne({ username })) {
-    remove();
-    throw new ApiError(409, "Username already exists");
-    return;
-  }
-  if (await User.findOne({ email })) {
-    remove();
-    throw new ApiError(409, "email already exists");
-  }
+
 
   ///check for image,check for avatar and upload image to cloudinary
   /////avatra is required to upload
@@ -144,7 +123,7 @@ const loginUser = asyncHandler(async (req, res) => {
   //if user is not found
   //if password is not matched
   ///create access token and refresh token
-  console.log("req.body", req.body);
+  // console.log("req.body", req.body);
   const { emailorusername, password } = req.body;
   if (!emailorusername?.trim()) {
     throw new ApiError(400, "username or email is required");
@@ -793,5 +772,6 @@ export {
   getuserchannel,
   getwatchHistory,
   updatewatchhistory,
-  getsubscripition
+  getsubscripition,
+
 };
