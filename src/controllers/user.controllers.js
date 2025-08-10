@@ -16,6 +16,36 @@ function isValidEmail(email) {
   return emailRegex.test(email);
 }
 
+
+const forgotpassword = asyncHandler(async (req, res) => {
+  const { email, password, token } = req.body;
+
+    const user = await User.findOne({ email });
+    if (!user) throw new ApiError(404, "User not found");
+    
+      if (
+      user.forgotPasswordToken !== token ||
+      !user.forgotPasswordTokenExpiry ||
+      user.forgotPasswordTokenExpiry < Date.now()
+    ) {
+      throw new ApiError(400, "Invalid or expired token");
+    }
+
+    // Update password (hashing will be done in pre-save middleware)
+    user.password = password;
+
+    user.forgotPasswordToken = undefined;
+    user.forgotPasswordTokenExpiry = undefined;
+
+    await user.save({ validateBeforeSave: false });
+    user.password = undefined;
+    return res
+      .status(200)
+      .json(new ApiResponse(200, user, "Password updated successfully"));
+
+   
+});
+
 const generatetokens = async (userId) => {
   try {
     const user = await User.findById(userId);
@@ -773,5 +803,6 @@ export {
   getwatchHistory,
   updatewatchhistory,
   getsubscripition,
+  forgotpassword
 
 };

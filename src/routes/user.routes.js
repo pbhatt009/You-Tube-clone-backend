@@ -12,10 +12,11 @@ import {
   getuserchannel,
   getwatchHistory,
   updatewatchhistory,
-  getsubscripition
+  getsubscripition,
+  forgotpassword
 } from "../controllers/user.controllers.js";
 import {sendEmail} from "../controllers/nodemailer.js";
-
+import {resetPasswordmail} from "../controllers/nodemailer_forgor_password.js";
 import { upload } from "../middlewares/multer.js";
 import { verifyToken } from "../middlewares/auth.middleware.js";
 
@@ -57,7 +58,8 @@ router.route("/channel/:username").get(getuserchannel);
 router.route("/watchHistory").get(verifyToken, getwatchHistory);
 router.route("/subscripition").get(verifyToken,getsubscripition);
 router.route("/sendEmail").post(sendEmail);
-
+router.route("/resetPasswordmail").post(resetPasswordmail);
+router.route("/forgotPassword").post(forgotpassword);
 router
   .route("/UpdateWatchHistory/:videoid")
   .patch(verifyToken, updatewatchhistory);
